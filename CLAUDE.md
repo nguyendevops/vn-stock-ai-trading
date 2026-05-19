@@ -88,7 +88,9 @@ cp -r .claude/skills/* ~/.claude/skills/
 
 Xác nhận: `ls "$HOME\.claude\skills"` phải thấy 5 thư mục: `vn-analyze vn-technical vn-fundamental vn-market vn-report`
 
-### Bước 6 — Cấu hình Claude Desktop
+### Bước 6 — Cấu hình MCP
+
+> **Note:** Repo này đã có sẵn `.mcp.json` ở root → Claude Code CLI tự load MCP khi user `cd` vào repo và chạy `claude`. Bước này CHỈ cần làm nếu user muốn dùng Claude Desktop app.
 
 Lấy username:
 - Windows: `$env:USERNAME`

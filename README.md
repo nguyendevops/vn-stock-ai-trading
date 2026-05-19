@@ -96,9 +96,10 @@ node --version   # phải ra v18+ hoặc cao hơn
 
 Tải Claude Desktop từ https://claude.ai/download → cài và đăng nhập.
 
-> **Quan trọng:** Skills (`/vn-analyze`, `/vn-market`...) chỉ chạy trong **Claude Code CLI** (gõ `claude` trong terminal), không phải Claude Desktop app.  
-> Claude Desktop vẫn cần để dùng MCP — nhưng các slash commands phải chạy qua CLI.  
-> Cài Claude Desktop → đăng nhập → sau đó mở terminal gõ `claude` để dùng skills.
+> **Quan trọng — chạy ở đâu:**  
+> • **Claude Code CLI** (gõ `claude` trong terminal, mở repo này): Slash commands + MCP đều hoạt động (auto-load từ `.mcp.json` trong repo). ← **Khuyến nghị**  
+> • **Claude Desktop app**: MCP hoạt động, slash commands phụ thuộc phiên bản.  
+> Cài Claude Desktop để đăng nhập tài khoản Anthropic, sau đó nên dùng `claude` trong terminal cho trải nghiệm tốt nhất.
 
 ---
 
@@ -150,7 +151,13 @@ Sau khi xong, thư mục sẽ nằm tại:
 
 ---
 
-### Bước 7 — Cấu hình Claude Desktop
+### Bước 7 — Cấu hình MCP
+
+**Cách A — Claude Code CLI (khuyến nghị):**
+
+Repo này có sẵn file `.mcp.json` → khi bạn `cd` vào repo và gõ `claude`, MCP `tradingview` + `vnstock` tự load. Không cần làm gì thêm. Nếu Claude hỏi approval cho MCP lần đầu, chọn "Approve".
+
+**Cách B — Claude Desktop:**
 
 **Windows:**
 

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "tradingview": {
+      "command": "node",
+      "args": [
+        "${HOME}/tradingview-mcp/src/server.js"
+      ]
+    },
+    "vnstock": {
+      "command": "vnstock-mcp"
+    }
+  }
+}
