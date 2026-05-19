@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "tradingview": {
+      "command": "node",
+      "args": [
+        "C:\\Users\\<YOUR_USERNAME>\\tradingview-mcp\\src\\server.js"
+      ]
+    },
+    "vnstock": {
+      "command": "vnstock-mcp",
+      "env": {
+        "VNSTOCK_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
