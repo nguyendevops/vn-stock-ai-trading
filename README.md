@@ -195,7 +195,7 @@ Thay đường dẫn args thành:
 Clone repo này về máy (nếu chưa có):
 
 ```powershell
-git clone https://github.com/andyluu98/vn-trading-analyst.git
+git clone https://github.com/andyluu98/vn-stock-ai-trading.git
 cd vn-trading-analyst
 ```
 
