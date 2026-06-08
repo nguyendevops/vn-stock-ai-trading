@@ -29,4 +29,7 @@ reports/
 # Local env / secrets
 .env
 .env.local
+*.local
 *.key
+*.log
+claude_desktop_config.json
