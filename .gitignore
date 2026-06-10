@@ -33,3 +33,6 @@ reports/
 *.key
 *.log
 claude_desktop_config.json
+
+# Claude Code local settings — permission rules có thể chứa lệnh kèm API key
+.claude/settings.local.json

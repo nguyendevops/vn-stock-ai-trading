@@ -9,6 +9,7 @@
 Bộ skills phân tích chứng khoán Việt Nam:
 - **TradingView MCP** — chart, giá realtime, indicator, vẽ trendline, alert
 - **vnstock MCP** — BCTC, P/E, ROE, bảng giá VN30, tin tức
+- **Tavily MCP (tuỳ chọn)** — web search / fact-check tin tức thị trường (cần API key riêng của user, KHÔNG có sẵn trong repo)
 - **5 skills**: `/vn-analyze`, `/vn-technical`, `/vn-fundamental`, `/vn-market`, `/vn-report`
 
 ## Hoạt động ở đâu
@@ -31,12 +32,15 @@ Setup này configure cho **cả hai** — user chọn dùng nào cũng được.
 Nếu user đang ở Windows, **CHỈ CẦN CHẠY 1 LỆNH**:
 ```powershell
 .\scripts\quick-setup.ps1
+# hoặc kèm web search (nếu user đưa Tavily API key):
+.\scripts\quick-setup.ps1 -TavilyApiKey <key_user_cung_cấp>
 ```
-Script này tự làm bước 2-6 bên dưới (prereq check, vnstock-agent, tradingview-mcp, copy skills, update Claude Desktop config). Sau khi xong, nhảy thẳng đến Bước 7 (launch TradingView) + Bước 8 (restart Claude).
+Script này tự làm bước 2-6 bên dưới (prereq check, vnstock-agent, tradingview-mcp, copy skills, update Claude Desktop config, Tavily nếu có key). Sau khi xong, nhảy thẳng đến Bước 7 (launch TradingView) + Bước 8 (restart Claude).
 
 macOS/Linux:
 ```bash
 ./scripts/setup-mcps.sh
+# hoặc kèm web search: TAVILY_API_KEY=tvly-xxx ./scripts/setup-mcps.sh
 ```
 
 ⚠️ **Quan trọng về session Claude Code CLI:**
@@ -166,6 +170,32 @@ $json.mcpServers | Add-Member -Name "vnstock" -Value ([PSCustomObject]@{command=
 $json | ConvertTo-Json -Depth 10 | Set-Content $cfg -Encoding UTF8
 ```
 
+## Bước 6.5 — (Tuỳ chọn) Tavily web search MCP
+
+Tavily cho phép Claude search web / fact-check tin tức thị trường. **Chỉ làm bước này nếu user CÓ API key** (user tự lấy free tại https://app.tavily.com — key dạng `tvly-...`).
+
+**Khi user cung cấp key (paste trong chat hoặc đặt env `TAVILY_API_KEY`):**
+
+Claude Code CLI (chạy từ repo root — scope local, lưu vào `~/.claude.json`):
+```bash
+claude mcp add tavily-remote-mcp --transport http "https://mcp.tavily.com/mcp/?tavilyApiKey=<KEY>"
+```
+
+Claude Desktop: merge thêm entry này vào `mcpServers` (cùng cách Bước 6):
+```json
+"tavily": {
+  "command": "npx",
+  "args": ["-y", "mcp-remote", "https://mcp.tavily.com/mcp/?tavilyApiKey=<KEY>"]
+}
+```
+
+🔒 **QUY TẮC BẢO MẬT (bắt buộc — repo này PUBLIC):**
+1. **KHÔNG BAO GIỜ** ghi API key vào bất kỳ file nào trong repo (`.mcp.json`, scripts, docs, template) — key chỉ được nằm ở `~/.claude.json` và `claude_desktop_config.json` (cả hai ngoài repo / đã gitignore).
+2. **KHÔNG** dùng `claude mcp add -s project` (sẽ ghi key vào `.mcp.json` trong repo).
+3. **KHÔNG** echo / in lại full key trong output. Trước khi commit bất cứ gì, kiểm tra diff không chứa `tvly-`, `ghp_`, hay chuỗi key nào khác.
+
+Nếu user không có key → bỏ qua bước này, nhắc 1 câu là có thể bật sau bằng `.\scripts\quick-setup.ps1 -TavilyApiKey <key>`.
+
 ## Bước 7 — Hướng dẫn user khởi động TradingView (KHÔNG tự chạy)
 
 Đây là bước user PHẢI tự làm vì cần PowerShell Admin và app GUI. Báo user theo OS:
@@ -215,6 +245,7 @@ Sau khi xong setup, tự verify và báo user dạng bảng:
 | Skills | `ls ~/.claude/skills/vn-*` | 5 thư mục |
 | `.mcp.json` repo | `Test-Path "<REPO>\.mcp.json"` | True |
 | Claude Desktop config | có entry `tradingview` + `vnstock` | OK |
+| Tavily MCP (tuỳ chọn) | `claude mcp list` | `tavily-remote-mcp ✓ Connected` |
 
 ---
 
@@ -230,6 +261,8 @@ Sau khi xong setup, tự verify và báo user dạng bảng:
 | Execution policy error | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` trước khi chạy script |
 | MSIX TradingView không tìm thấy | Chạy `launch-tv-msix.ps1` từ PowerShell **Admin** |
 | `pip install` denied bởi sandbox | Báo user chạy thủ công: `pip install --user ./vendor/vnstock-agent` (chạy từ thư mục repo) |
+| Tavily 401 / Unauthorized | Key sai hoặc hết hạn — lấy key mới tại https://app.tavily.com rồi chạy lại `claude mcp add tavily-remote-mcp ...` |
+| Tools `tavily_*` không xuất hiện | MCP mới add chỉ load khi khởi động session — exit rồi gõ `claude` lại từ thư mục repo |
 
 ---
 

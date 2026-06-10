@@ -22,6 +22,7 @@
    - [Bước 7 — Cấu hình Claude Desktop](#bước-7--cấu-hình-claude-desktop)
    - [Bước 8 — Cài Skills](#bước-8--cài-skills)
    - [Bước 9 — Khởi động TradingView](#bước-9--khởi-động-tradingview-mỗi-lần-dùng)
+   - [Bước 10 — (Tuỳ chọn) Tavily web search](#bước-10--tuỳ-chọn-tavily-web-search)
 4. [Kiểm tra hoạt động](#kiểm-tra-hoạt-động)
 5. [Các lệnh](#các-lệnh)
 6. [Troubleshooting](#troubleshooting)
@@ -47,9 +48,10 @@ TradingView MCP      vnstock MCP
     + Kế hoạch giao dịch
 ```
 
-**Hai nguồn dữ liệu:**
+**Nguồn dữ liệu:**
 - **TradingView MCP**: Biểu đồ, giá realtime, indicator kỹ thuật, alert, screenshot chart
 - **vnstock MCP**: Báo cáo tài chính, P/E, ROE, tin tức, bảng giá VN30, intraday
+- **Tavily MCP** *(tuỳ chọn)*: Web search / fact-check tin tức thị trường — cần API key riêng (free tại [app.tavily.com](https://app.tavily.com)), xem [Bước 10](#bước-10--tuỳ-chọn-tavily-web-search)
 
 ---
 
@@ -70,19 +72,21 @@ TradingView MCP      vnstock MCP
 
 **Windows:**
 ```powershell
-git clone https://github.com/andyluu98/vn-stock-ai-trading.git
+git clone https://github.com/nguyendevops/vn-stock-ai-trading.git
 cd vn-stock-ai-trading
 .\scripts\quick-setup.ps1
 ```
 
 **macOS/Linux:**
 ```bash
-git clone https://github.com/andyluu98/vn-stock-ai-trading.git
+git clone https://github.com/nguyendevops/vn-stock-ai-trading.git
 cd vn-stock-ai-trading
 ./scripts/setup-mcps.sh
 ```
 
 Script tự cài hết: vnstock-agent (từ vendor), tradingview-mcp, skills, Claude Desktop config.
+
+> 🔍 **Muốn Claude search được web/tin tức?** Thêm Tavily API key (free): `.\scripts\quick-setup.ps1 -TavilyApiKey tvly-xxx` (Windows) hoặc `TAVILY_API_KEY=tvly-xxx ./scripts/setup-mcps.sh` (macOS/Linux). Xem [Bước 10](#bước-10--tuỳ-chọn-tavily-web-search).
 
 Sau đó còn 2 việc **manual** (script không thể tự làm vì cần Admin):
 1. Khởi động TradingView debug port: `& .\scripts\launch-tv-msix.ps1` (PowerShell **Admin**)
@@ -234,7 +238,7 @@ Thay đường dẫn args thành:
 Clone repo này về máy (nếu chưa có):
 
 ```powershell
-git clone https://github.com/andyluu98/vn-stock-ai-trading.git
+git clone https://github.com/nguyendevops/vn-stock-ai-trading.git
 cd vn-stock-ai-trading
 ```
 
@@ -294,6 +298,24 @@ C:\Users\<YOUR_USERNAME>\vn-stock-ai-trading\scripts\launch_tv_debug.bat
 ```
 
 > 💡 **Tip**: Tạo shortcut file `.ps1` hoặc `.bat` ra Desktop để 1 click mỗi ngày.
+
+---
+
+### Bước 10 — (Tuỳ chọn) Tavily web search
+
+Cho phép Claude search web / fact-check tin tức thị trường qua [Tavily](https://tavily.com).
+
+1. Lấy API key **miễn phí** tại https://app.tavily.com (key dạng `tvly-...`)
+2. Đăng ký MCP — chạy từ **thư mục repo**:
+
+```powershell
+claude mcp add tavily-remote-mcp --transport http "https://mcp.tavily.com/mcp/?tavilyApiKey=<KEY_CỦA_BẠN>"
+```
+
+3. Với **Claude Desktop**: thêm entry `tavily` trong `config/claude-desktop-config-template.json` vào `claude_desktop_config.json` của bạn, thay `your_tavily_api_key_here` bằng key thật. Không dùng Tavily thì bỏ qua / xoá entry này.
+4. Restart Claude (exit rồi gõ `claude` lại) → tools `tavily_search`, `tavily_extract` sẵn sàng.
+
+> 🔒 **Bảo mật:** Lệnh trên lưu key vào `~/.claude.json` (config cá nhân, **ngoài repo**). **TUYỆT ĐỐI không** dán key vào `.mcp.json`, scripts hay bất kỳ file nào trong repo — repo này public, key sẽ bị lộ và bot quét GitHub sẽ lấy được trong vài phút.
 
 ---
 
@@ -409,6 +431,12 @@ Kiểm tra kết nối TradingView: dùng tv_health_check
 **❌ TradingView bản MSIX không tìm thấy exe**
 → Dùng `scripts/launch-tv-msix.ps1` thay vì `.bat` (yêu cầu PowerShell Admin).
 
+**❌ Tavily báo 401 / Unauthorized**
+→ Key sai hoặc hết hạn. Lấy key mới tại https://app.tavily.com rồi chạy lại lệnh `claude mcp add` ở Bước 10.
+
+**❌ Tools `tavily_*` không xuất hiện sau khi add**
+→ MCP mới chỉ load khi khởi động session: thoát Claude (`/exit`) rồi gõ `claude` lại từ thư mục repo.
+
 ---
 
 ## Cấu trúc repo
@@ -427,6 +455,7 @@ vn-stock-ai-trading/
 ├── config/
 │   └── claude-desktop-config-template.json   # Template cấu hình MCP
 ├── scripts/
+│   ├── quick-setup.ps1        # ⚡ Cài đặt 1 lệnh (Windows, khuyến nghị)
 │   ├── setup-mcps.sh          # Cài đặt tự động (macOS/Linux)
 │   ├── launch-tv-msix.ps1     # Khởi động TV bản Store (Windows Admin)
 │   └── launch_tv_debug.bat    # Khởi động TV bản .exe (Windows)

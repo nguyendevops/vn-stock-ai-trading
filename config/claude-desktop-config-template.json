@@ -12,6 +12,10 @@
       "env": {
         "VNSTOCK_API_KEY": "your_api_key_here"
       }
+    },
+    "tavily": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://mcp.tavily.com/mcp/?tavilyApiKey=your_tavily_api_key_here"]
     }
   }
 }

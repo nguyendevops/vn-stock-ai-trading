@@ -1,6 +1,13 @@
 # quick-setup.ps1 — One-command Windows setup for vn-stock-ai-trading
 # Usage: from repo root, run:  .\scripts\quick-setup.ps1
+#        with Tavily web search: .\scripts\quick-setup.ps1 -TavilyApiKey tvly-xxx
 # Does EVERYTHING except launching TradingView (needs Admin separately)
+
+param(
+    # Optional: Tavily web-search MCP. Key is written ONLY to per-user configs
+    # outside the repo (~/.claude.json + %APPDATA%\Claude) — NEVER into git.
+    [string]$TavilyApiKey = $env:TAVILY_API_KEY
+)
 
 $ErrorActionPreference = "Continue"
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -12,7 +19,7 @@ Write-Host "===========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # 1. Prereqs
-Write-Host "[1/6] Checking prerequisites..." -ForegroundColor Yellow
+Write-Host "[1/7] Checking prerequisites..." -ForegroundColor Yellow
 $missing = @()
 foreach ($cmd in @("python","node","git","pip","npm")) {
     if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) { $missing += $cmd }
@@ -29,7 +36,7 @@ Write-Host "  OK: Python $(python --version 2>&1), Node $(node --version), Git $
 
 # 2. Install vnstock-agent from vendored source
 Write-Host ""
-Write-Host "[2/6] Installing vnstock-agent (from vendor/)..." -ForegroundColor Yellow
+Write-Host "[2/7] Installing vnstock-agent (from vendor/)..." -ForegroundColor Yellow
 $vendorPath = Join-Path $repoRoot "vendor\vnstock-agent"
 pip install --user $vendorPath -q 2>&1 | Out-String -Stream | Where-Object { $_ -match "Successfully|ERROR" } | ForEach-Object { Write-Host "  $_" }
 if (Get-Command vnstock-mcp -ErrorAction SilentlyContinue) {
@@ -40,7 +47,7 @@ if (Get-Command vnstock-mcp -ErrorAction SilentlyContinue) {
 
 # 3. Clone & install tradingview-mcp
 Write-Host ""
-Write-Host "[3/6] Setting up tradingview-mcp..." -ForegroundColor Yellow
+Write-Host "[3/7] Setting up tradingview-mcp..." -ForegroundColor Yellow
 $tvDir = "$HOME\tradingview-mcp"
 if (Test-Path "$tvDir\src\server.js") {
     Write-Host "  OK: Already installed at $tvDir" -ForegroundColor Green
@@ -52,7 +59,7 @@ if (Test-Path "$tvDir\src\server.js") {
 
 # 4. Copy skills to global ~/.claude/skills/
 Write-Host ""
-Write-Host "[4/6] Installing skills to ~/.claude/skills/..." -ForegroundColor Yellow
+Write-Host "[4/7] Installing skills to ~/.claude/skills/..." -ForegroundColor Yellow
 $skillsDest = "$HOME\.claude\skills"
 New-Item -ItemType Directory -Force -Path $skillsDest | Out-Null
 Copy-Item -Recurse -Force "$repoRoot\.claude\skills\*" $skillsDest
@@ -61,7 +68,7 @@ Write-Host "  OK: $($installed.Count) skills installed: $($installed -join ', ')
 
 # 5. Merge Claude Desktop config
 Write-Host ""
-Write-Host "[5/6] Updating Claude Desktop config..." -ForegroundColor Yellow
+Write-Host "[5/7] Updating Claude Desktop config..." -ForegroundColor Yellow
 $cfg = "$env:APPDATA\Claude\claude_desktop_config.json"
 $cfgDir = Split-Path -Parent $cfg
 New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
@@ -80,12 +87,38 @@ $json.mcpServers | Add-Member -Name "tradingview" -Value ([PSCustomObject]@{comm
 $json.mcpServers | Add-Member -Name "vnstock" -Value ([PSCustomObject]@{
     command="python"; args=@("-m","vnstock_agent.server")
 }) -MemberType NoteProperty -Force
+$desktopEntries = "tradingview + vnstock"
+if ($TavilyApiKey) {
+    $json.mcpServers | Add-Member -Name "tavily" -Value ([PSCustomObject]@{
+        command="npx"; args=@("-y","mcp-remote","https://mcp.tavily.com/mcp/?tavilyApiKey=$TavilyApiKey")
+    }) -MemberType NoteProperty -Force
+    $desktopEntries += " + tavily"
+}
 $json | ConvertTo-Json -Depth 10 | Set-Content $cfg -Encoding UTF8
-Write-Host "  OK: Added tradingview + vnstock to $cfg" -ForegroundColor Green
+Write-Host "  OK: Added $desktopEntries to $cfg" -ForegroundColor Green
 
-# 6. Final report
+# 6. Tavily web-search MCP for Claude Code CLI (optional — needs personal API key)
 Write-Host ""
-Write-Host "[6/6] Setup complete!" -ForegroundColor Green
+Write-Host "[6/7] Tavily web-search MCP (optional)..." -ForegroundColor Yellow
+if ($TavilyApiKey) {
+    if (Get-Command claude -ErrorAction SilentlyContinue) {
+        Push-Location $repoRoot
+        claude mcp add tavily-remote-mcp --transport http "https://mcp.tavily.com/mcp/?tavilyApiKey=$TavilyApiKey" *> $null
+        Pop-Location
+        Write-Host "  OK: tavily-remote-mcp registered for Claude Code CLI (local scope)" -ForegroundColor Green
+        Write-Host "  NOTE: key stays in per-user config OUTSIDE the repo — never commit it to git" -ForegroundColor DarkGray
+    } else {
+        Write-Host "  WARN: 'claude' CLI not in PATH — register manually later (from repo root):" -ForegroundColor Yellow
+        Write-Host '    claude mcp add tavily-remote-mcp --transport http "https://mcp.tavily.com/mcp/?tavilyApiKey=<YOUR_KEY>"' -ForegroundColor DarkGray
+    }
+} else {
+    Write-Host "  Skipped — to enable web search: .\scripts\quick-setup.ps1 -TavilyApiKey <key>" -ForegroundColor Gray
+    Write-Host "  (free key at https://app.tavily.com)" -ForegroundColor DarkGray
+}
+
+# 7. Final report
+Write-Host ""
+Write-Host "[7/7] Setup complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "===========================================" -ForegroundColor Cyan
 Write-Host "  Next steps (manual)" -ForegroundColor Cyan
